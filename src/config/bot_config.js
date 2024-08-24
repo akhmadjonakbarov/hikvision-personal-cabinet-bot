@@ -1,6 +1,8 @@
 // index.js
 const ButtonController = require("../controllers/button_controller");
-const RegisterServiceApi = require("../services/register_service_api");
+const RegisterServiceApi = require("../services/RegisterServiceApi");
+const ApiConfig = require("../core/utils/ApiConfig");
+const ControlNumber = require("../core/utils/ControlNumber");
 const {mainButtons, sharePhoneNumber} = require("../views/markup_buttons");
 const {Telegraf} = require('telegraf');
 
@@ -28,39 +30,33 @@ async function launchBot() {
 
     bot.on('contact', async (ctx) => {
         const contact = ctx.message.contact;
-        const registerServiceApi = new RegisterServiceApi("https://bot.programm.uz/api/group")
+        const registerServiceApi = new RegisterServiceApi(ApiConfig.getRegisterUrl());
 
         if (contact && contact.phone_number) {
-            const phoneNumber = contact.phone_number;
+            const phone_number = contact.phone_number;
 
             // Here, you can perform additional validation if needed
-            if (validatePhoneNumber(phoneNumber)) {
+            if (ControlNumber.isValidNumber(phone_number)) {
                 // Store or process the phone number
-                console.log(`Received phone number: ${phoneNumber}`);
+                console.log(`Received phone number: ${phone_number}`);
+                const formatted_number = ControlNumber.removePreffix(phone_number);
 
-                const response = await registerServiceApi.register(phoneNumber, ctx.message.chat.id);
+                const response = await registerServiceApi.register(formatted_number, ctx.message.chat.id);
 
                 const data = response.data;
+                console.log(data);
 
                 if (data.success === true) {
-                    // Confirm registration
-                    await ctx.reply(`Thank you for sharing your phone number: ${phoneNumber}. Registration complete.`, mainButtons);
+                    await ctx.reply("Roʻyxatdan oʻtish muvaffaqiyatli yakunlandi!", mainButtons);
                 }
 
-
             } else {
-                await ctx.reply('The phone number format is invalid. Please share a valid phone number.');
+                await ctx.reply("Iltimos to'g'ri telefon kiriting!\nIltimos qaytadan boshlash uchun /start kommandasini yuboring",);
             }
         } else {
-            await ctx.reply('Failed to receive your phone number. Please try again.');
+            await ctx.reply('Telefon raqamingizni qabul qilib bo‘lmadi. Iltimos, qayta urinib koʻring.');
         }
     });
-
-// Example validation function
-    function validatePhoneNumber(phoneNumber) {
-        // Implement your validation logic here
-        return true; // For example purposes, always return true
-    }
 
 
     await bot.launch();
