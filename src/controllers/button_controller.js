@@ -1,6 +1,7 @@
-const GroupServiceApi = require("../services/register_service_api");
 const ScoreServiceApi = require("../services/score_service_api");
 const PersonalCabinet = require("../services/personal_cabinet");
+const RegisterServiceApi = require("../services/RegisterServiceApi");
+const ApiConfig = require("../core/utils/ApiConfig");
 const {personalCabinetButtons, mainButtons, balanceButtons, backButton} = require("../views/markup_buttons");
 
 class ButtonController {
@@ -20,24 +21,6 @@ class ButtonController {
         }
     }
 
-    handleRegister(bot) {
-        const groupServiceApi = new GroupServiceApi("https://bot.programm.uz/api/register");
-
-        bot.hears('Ro’yhatga kirish', async (ctx) => {
-            try {
-                const {username, group_id} = ctx.message.chat;
-                const response = await groupServiceApi.registerUser(username, group_id);
-                if (response.success) {
-                    await ctx.reply('Ro’yhatga kirildi!', mainButtons);
-                } else {
-                    await ctx.reply('Ro’yhatga kirishda xatolik yuz berdi.');
-                }
-            } catch (error) {
-                console.error('Error registering user:', error);
-                await ctx.reply('Ro’yhatga kirishda xatolik yuz berdi.');
-            }
-        });
-    }
 
     handleMainButtons(bot) {
         bot.hears('Shahsiy kabinet', async (ctx) => {
@@ -66,7 +49,8 @@ class ButtonController {
     }
 
     handlePersonalCabinetButtons(bot) {
-        const scoreApiService = new ScoreServiceApi("https://bot.programm.uz/api/ball");
+        const scoreApiService = new ScoreServiceApi(ApiConfig.getScoreInfoUrl());
+
         bot.hears('Ball yig\'ish uchun nima qilish kerak? 📃', async (ctx) => {
             const infoForGettingScore = await scoreApiService.getScore();
             await ctx.reply(`${infoForGettingScore.data.text}`);
@@ -109,7 +93,6 @@ class ButtonController {
 
 
     setupHandlers(bot) {
-        this.handleRegister(bot);
         this.handleMainButtons(bot);
         this.handlePersonalCabinetButtons(bot);
     }
